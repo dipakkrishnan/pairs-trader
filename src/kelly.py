@@ -36,10 +36,28 @@ def calculate_kelly_position_sizes(ticker1, ticker2, hedge_ratio, start_date, en
     # Calculate win probability and win/loss ratio based on historical data
     wins = spread_returns[spread_returns > 0]
     losses = spread_returns[spread_returns < 0]
+    zero_returns = spread_returns[spread_returns == 0]
     
-    win_prob = len(wins) / len(spread_returns)
-    avg_win = wins.mean()
-    avg_loss = abs(losses.mean())
+    total_trades = len(spread_returns)
+    if total_trades == 0:
+        return {
+            'kelly_fraction': 0,
+            'position_size_1': 0,
+            'position_size_2': 0,
+            'win_probability': 0,
+            'avg_win': 0,
+            'avg_loss': 0,
+            'mean_return': 0,
+            'std_return': 0,
+            'sharpe_ratio': 0
+        }
+    
+    # Count zero returns as half wins
+    win_prob = (len(wins) + len(zero_returns) * 0.5) / total_trades
+    
+    # Handle cases where there are no wins or losses
+    avg_win = wins.mean() if len(wins) > 0 else 0
+    avg_loss = abs(losses.mean()) if len(losses) > 0 else 1  # Use 1 to avoid division by zero
     
     # Calculate Kelly fraction
     kelly_fraction = (win_prob / avg_loss) - ((1 - win_prob) / avg_win)
